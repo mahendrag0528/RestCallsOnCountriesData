@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<title>Countries</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+</head>
+	<body style="padding: 2%;">
+		<div th:fragment="content" th:remove="tag">
+			<div 			style="padding-top: 5px;">
+				<input type="button" value="load countries list" id="buttonLoadCountries" class="btn btn-primary m-2">
+			</div>
+			<div 			style="padding-top:5px;">
+				<select id="dropDownCountries" class="form-control m-2" style="height: 300px;" size="3">
+					
+				</select>
+			</div>
+			<div class="form-group row" style="padding-top: 5px;">
+				<div>
+				<label for="countryName" class="col-sm-2 col-form-label mt-2" id="labelCountryName">Country Name:</label>
+				<input type="text" class="form-control mt-2" id="fieldCountryName" required/>
+				</div>
+				
+				<div class="col-sm-4 mt-2">
+					<input type="button" value="Add" id="buttonAdd" class="btn btn-secondary"/>
+					<input type="button" value="Update" id="buttonUpdate" class="btn btn-secondary"/>
+					<input type="button" value="Delete" id="buttonDelete" class="btn btn-secondary"/>
+				</div>
+			</div>
+		</div>
+		<script>
+			//get api calls
+			var down;
+			var data=$("#fieldCountryName");
+			var add=$("#buttonAdd");
+			$(document).ready(function(){
+				down=$("#dropDownCountries");
+				data=$("#fieldCountryName");
+				add=$("#buttonAdd");
+				$("#buttonLoadCountries").click(function(){
+				   loadCountries();
+				});
+				
+				add.click(function(){
+					addCountry();
+				});
+				
+				down.on("change",function(){
+								showCountryinFormClick();
+				});
+				
+				$("#buttonUpdate").click(function(){
+					updatecountry();
+				})
+				
+				$("#buttonDelete").click(function(){
+					deleteCountry();
+				});
+				
+			});
+			function loadCountries(){
+				var url="/countries/getList";
+				$.get(url,function(responseJSON){
+					down.empty();
+					$.each(responseJSON,function(index,country){
+						$("<option>").val(country.id).text(country.name).appendTo(down);
+					});
+				}).done(function(){
+					
+				}).fail(function(){
+					
+				});
+			}
+			
+			//post api call
+			var csrfHeader="X-CSRF-TOKEN";
+			var csrfToken="abaa6049-8181-4dde-ab9f-ceac2b89e8ef";
+			function addCountry(){
+				
+				url= "/countries/save";
+				countryName=data.val();
+				if(countryName==""){
+					alert("enter country..");
+				}
+				jsonData={name: countryName};
+				$.ajax({
+					type: "POST",
+					url: url,
+					beforeSend:function(xhr){
+						xhr.setRequestHeader(csrfHeader,csrfToken);
+					},
+				data:JSON.stringify(jsonData),
+				contentType:'application/json'
+				}).done(function(countryId){
+					selectNewlyaddCountry(countryId,countryName);
+				});
+			}
+			function selectNewlyaddCountry(countryId,countryName){
+				$("<option>").val(countryId).text(countryName).appendTo(down);
+				$("#dropDownCountries option[value='"+countryId+"']").prop("selected",true);
+				$("#fieldCountryName").val("").focus();
+			}
+			
+			
+			//on select the country show in form
+			function showCountryinFormClick(){
+				selectedcountry=$("#dropDownCountries option:selected").text();
+				$("#fieldCountryName").val(selectedcountry);
+			}
+			// update api call
+			var csrfHeader="X-CSRF-TOKEN";
+			var csrfToken="abaa6049-8181-4dde-ab9f-ceac2b89e8ef";
+			function updatecountry(){
+							url= "/countries/save";
+							countryId=down.val();
+							countryName=data.val();
+							jsonData={id: countryId,name: countryName};
+							$.ajax({
+								type: "POST",
+								url: url,
+								beforeSend:function(xhr){
+									xhr.setRequestHeader(csrfHeader,csrfToken);
+								},
+							data:JSON.stringify(jsonData),
+							contentType:'application/json'
+							}).done(function(countryId){
+								alert("done");
+							});
+		 }
+		 
+		 //delete call
+		 function deleteCountry(){
+			countryId=down.val();
+			countryName=data.val();
+			url="/countries/delete/"+countryId;
+			$.get(url).done(function(){
+				$("#dropDownCountries option:selected").remove();
+				selectNewlyaddCountry(countryId,countryName);
+			});
+		 }
+		 
+		</script>
+	</body>
+</html>
